@@ -1,5 +1,6 @@
 package com.example.bank.service;
 
+import com.example.bank.dto.UserResponse;
 import com.example.bank.entity.Branch;
 import com.example.bank.entity.Role;
 import com.example.bank.entity.User;
@@ -40,7 +41,15 @@ public class AdminService {
                 .filter(u -> u.getRole() == Role.CUSTOMER)
                 .collect(Collectors.toList());
     }
-
+    // New method: create user dynamically
+    // -----------------------------
+    public User createUser(User user) {
+        // Check for duplicate email
+        if (userRepository.findAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
+            throw new RuntimeException("Email already exists!");
+        }
+        return userRepository.save(user);
+    }
     // Approve customer
     public String approveCustomer(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
@@ -53,6 +62,30 @@ public class AdminService {
             return "User is not a customer!";
         }
     }
+    public List<UserResponse> getAllUsers() {
+    return userRepository.findAll()
+            .stream()
+            .map(user -> new UserResponse(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole(),
+                    user.getStatus()
+            ))
+            .collect(Collectors.toList());
+    }
+
+    public UserResponse getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return new UserResponse(
+            user.getId(),
+            user.getEmail(),
+            user.getRole(),
+            user.getStatus()
+        );
+    }
+
 
     // Reject customer
     public String rejectCustomer(Long userId) {
